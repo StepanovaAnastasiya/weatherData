@@ -1,0 +1,19 @@
+{
+    "name": "astepanova/weather",
+    "description": "weather API",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Weather\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Anastasia",
+            "email": "stasyod@gmail.com"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    }
+}

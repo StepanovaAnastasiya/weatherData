@@ -1,0 +1,38 @@
+*.log
+*.cache
+
+# Node
+node_modules/
+
+# JetBrains
+*.iws
+atlassian-ide-plugin.xml
+
+# Eclipse
+*~.nib
+*.launch
+local.properties
+.loadpath
+.project
+.buildpath
+.tern-project
+
+# Netbeans
+nbproject/
+nbbuild/
+nbdist/
+nbactions.xml
+
+# Vim, emacs
+*~
+\#*\#
+
+# PhpStorm
+.idea/
+
+# Doc
+docs/
+
+.env
+*.env
+.php_cs.cache
