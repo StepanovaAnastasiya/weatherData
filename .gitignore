@@ -1,5 +1,6 @@
 *.log
 *.cache
+cache/
 
 # Node
 node_modules/

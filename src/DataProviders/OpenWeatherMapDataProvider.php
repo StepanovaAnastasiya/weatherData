@@ -12,19 +12,34 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
 
     use DistanceBetweenSpots;
 
+    private $cachePath;
 
-    public function __construct(CitiesDataProvider $citiesDataProvider)
+    public function __construct(CitiesDataProvider $citiesDataProvider, $cachePath = __DIR__ . '/../../cache/')
     {
         $this->citiesDataProvider = $citiesDataProvider;
+        $this->cachePath = $cachePath;
     }
+
 
     public function getWeatherData(float $latitude, float $longitude) : array
     {
         $citiesArray = $this->citiesDataProvider->getCitiesData();
         $readyData = [];
+
         foreach ($citiesArray as $city => $data) {
-            $APIurl = $this->getAPIurl($data);
-            $readyData[] = $this->processRawWeatherData($data, $this->getCityWeatherData($APIurl), $latitude, $longitude);
+            $cacheKey = md5($data['zip_code'] . $data['country_code']);
+            $cachedData = $this->getCachedWeatherData($cacheKey);
+
+            if (!$cachedData) {
+                $APIurl = $this->getAPIurl($data);
+                $rawCityWeatherData = $this->getCityWeatherData($APIurl);
+
+                $this->cacheWeatherData($cacheKey, $rawCityWeatherData);
+            } else {
+                $rawCityWeatherData = $cachedData;
+            }
+
+            $readyData[] = $this->processRawWeatherData($data, $rawCityWeatherData, $latitude, $longitude);
         }
 
         usort($readyData, [$this, 'sortByTempSpread']);
@@ -58,5 +73,30 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
     private function sortByTempSpread($a, $b)
     {
         return $a['temp_spread'] <=> $b['temp_spread'];
+    }
+
+    private function getCachedWeatherData($cacheKey)
+    {
+        $cacheFilePath = $this->cachePath . $cacheKey;
+
+        if (file_exists($cacheFilePath)) {
+            $cacheData = file_get_contents($cacheFilePath);
+            return json_decode($cacheData, true);
+        }
+
+        return null;
+    }
+
+    private function cacheWeatherData($cacheKey, $rawCityWeatherData)
+    {
+        $cacheFilePath = $this->cachePath . $cacheKey;
+
+        if (!is_dir(dirname($cacheFilePath))) {
+            if (!mkdir($concurrentDirectory = dirname($cacheFilePath), 0777, true) && !is_dir($concurrentDirectory)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+            }
+        }
+
+        file_put_contents($cacheFilePath, json_encode($rawCityWeatherData));
     }
 }
