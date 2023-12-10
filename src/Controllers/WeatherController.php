@@ -15,28 +15,33 @@ class WeatherController
     private AppLogger $appLogger;
 
 
-    public function __construct()
+    public function __construct(WeatherDataProvider $dataProvider, AppLogger $appLogger)
     {
-        $this->dataProvider = new OpenWeatherMapDataProvider( new FileCitiesDataProvider());
-        $this->appLogger = new AppLogger();
+        $this->dataProvider = $dataProvider;
+        $this->appLogger = $appLogger;
     }
 
-    function viewWeatherData()
+    public function viewWeatherData()
     {
         if (isset($_POST['submit'])) {
-            $latitude = htmlspecialchars($_POST['latitude']);
-            $longitude = htmlspecialchars($_POST['longitude']);
-            if(!is_numeric($latitude) || !is_numeric($longitude)){
-                $error = 'Invalid data in form fields, please enter numeric values';
-            } else {
-                try{
-                    $data = $this->dataProvider->getWeatherData($latitude, $longitude);
-                } catch (\Exception $e){
-                    $error = 'Error while processing the data: ' . $e->getMessage();
-                    $this->appLogger->logger->error($error);
-                }
+            $latitude = filter_input(INPUT_POST, 'latitude', FILTER_VALIDATE_FLOAT);
+            $longitude = filter_input(INPUT_POST, 'longitude', FILTER_VALIDATE_FLOAT);
+            try {
+                $this->validateInput($latitude, $longitude);
+                $data = $this->dataProvider->getWeatherData($latitude, $longitude);
+            } catch (\Exception $e) {
+                $error = 'Error while processing the data: ' . $e->getMessage();
+                $this->appLogger->logger->error($error);
             }
+
         }
         require("src/templates/weatherView.php");
+    }
+
+    private function validateInput($latitude, $longitude)
+    {
+        if (empty($latitude) || empty($longitude)) {
+            throw new \InvalidArgumentException('Invalid data in form fields, please enter numeric values');
+        }
     }
 }
