@@ -13,12 +13,16 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
 
     use DistanceBetweenSpots;
 
-    private $cachePath;
+    private string $cachePath;
+    private string $apiKey;
 
-    public function __construct(CitiesDataProvider $citiesDataProvider, $cachePath = __DIR__ . '/../../cache/')
+    const API_BASE_URL = 'https://api.openweathermap.org/data/2.5/weather?zip=%s,%s&units=metric&appid=%s';
+
+    public function __construct(CitiesDataProvider $citiesDataProvider, string $cachePath, string $apiKey = '')
     {
         $this->citiesDataProvider = $citiesDataProvider;
         $this->cachePath = $cachePath;
+        $this->apiKey = $apiKey;
     }
 
 
@@ -51,7 +55,7 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
         return $readyData;
     }
 
-    private function getCityWeatherData($APIurl)
+    private function getCityWeatherData(string $APIurl) :array
     {
         $json = file_get_contents($APIurl);
         if (empty($json)) {
@@ -60,9 +64,14 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
         return json_decode($json, true);
     }
 
-    private function getAPIurl($data)
+    private function getAPIurl(array $data) : string
     {
-        return 'https://api.openweathermap.org/data/2.5/weather?zip=' . $data['zip_code'] . ',' . $data['country_code'] . '&units=metric&appid=' . $_ENV['API_KEY'] ?? '';
+        return sprintf(
+            $this::API_BASE_URL,
+            $data['zip_code'],
+            $data['country_code'],
+            $this->apiKey
+        );
     }
 
     private function processRawWeatherData(array $fileData, array $rawCityWeatherData, float $latitude, float $longitude): array
@@ -84,7 +93,7 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
         return $a['temp_spread'] <=> $b['temp_spread'];
     }
 
-    private function getCachedWeatherData($cacheKey)
+    private function getCachedWeatherData(string $cacheKey)
     {
         $cacheFilePath = $this->cachePath . $cacheKey;
 
@@ -96,7 +105,7 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
         return null;
     }
 
-    private function cacheWeatherData($cacheKey, $rawCityWeatherData)
+    private function cacheWeatherData(string $cacheKey, array $rawCityWeatherData): void
     {
         $cacheFilePath = $this->cachePath . $cacheKey;
 
