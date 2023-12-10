@@ -4,5 +4,5 @@ namespace Weather\Interfaces;
 
 interface WeatherDataProvider
 {
-    public function getWeatherData($longitude, $latitude);
+    public function getWeatherData(float $longitude, float $latitude) : array;
 }

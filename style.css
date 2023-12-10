@@ -125,5 +125,8 @@ tr:hover {
   cursor: pointer;
 }
 
-
+.weather-icon {
+  width: 30px; /* Set the desired width */
+  height: 30px; /* Set the desired height */
+}
 
