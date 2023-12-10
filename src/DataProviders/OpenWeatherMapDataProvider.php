@@ -1,4 +1,5 @@
 <?php
+
 namespace Weather\DataProviders;
 
 use Weather\Interfaces\CitiesDataProvider;
@@ -21,12 +22,15 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
     }
 
 
-    public function getWeatherData(float $latitude, float $longitude) : array
+    public function getWeatherData(float $latitude, float $longitude): array
     {
         $citiesArray = $this->citiesDataProvider->getCitiesData();
         $readyData = [];
 
         foreach ($citiesArray as $city => $data) {
+            if (empty($data['zip_code']) || empty($data['country_code'])) {
+                throw new \Exception('Not all needed data is available');
+            }
             $cacheKey = md5($data['zip_code'] . $data['country_code']);
             $cachedData = $this->getCachedWeatherData($cacheKey);
 
@@ -47,17 +51,21 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
         return $readyData;
     }
 
-    private function getCityWeatherData($APIurl) {
+    private function getCityWeatherData($APIurl)
+    {
         $json = file_get_contents($APIurl);
+        if (empty($json)) {
+            throw new \Exception('API response has no data');
+        }
         return json_decode($json, true);
     }
 
     private function getAPIurl($data)
     {
-        return 'https://api.openweathermap.org/data/2.5/weather?zip=' . $data['zip_code'] . ',' . $data['country_code']. '&units=metric&appid=' . $_ENV['API_KEY'];
+        return 'https://api.openweathermap.org/data/2.5/weather?zip=' . $data['zip_code'] . ',' . $data['country_code'] . '&units=metric&appid=' . $_ENV['API_KEY'] ?? '';
     }
 
-    private function processRawWeatherData($fileData, $rawCityWeatherData, $latitude, $longitude)
+    private function processRawWeatherData(array $fileData, array $rawCityWeatherData, float $latitude, float $longitude): array
     {
         $cityData = [];
         $cityData['city_name'] = $rawCityWeatherData['name'] ?? $fileData['city_name'];
@@ -67,6 +75,7 @@ class OpenWeatherMapDataProvider implements WeatherDataProvider
         $cityData['distance_to_spot'] = $this->calculateDistance($latitude, $longitude, $rawCityWeatherData['coord']['lat'] ?? $fileData['latitude'], $rawCityWeatherData['coord']['lon'] ?? $fileData['longitude']);
         $cityData['weather_description'] = $rawCityWeatherData['weather'][0]['description'];
         $cityData['icon'] = $rawCityWeatherData['weather'][0]['icon'];
+
         return $cityData;
     }
 
