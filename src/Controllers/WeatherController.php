@@ -21,9 +21,13 @@ class WeatherController
     function viewWeatherData()
     {
         if (isset($_POST['submit'])) {
-            $longitude = htmlspecialchars('longitude');
-            $latitude = htmlspecialchars('latitude');
-            $data = $this->dataProvider->getWeatherData($longitude, $latitude);
+            $latitude = htmlspecialchars($_POST['latitude']);
+            $longitude = htmlspecialchars($_POST['longitude']);
+            if(!is_numeric($latitude) || !is_numeric($longitude)){
+                $error = 'Invalid data in form fields, please enter numeric values';
+            } else {
+                $data = $this->dataProvider->getWeatherData($latitude, $longitude);
+            }
         }
         require("src/templates/weatherView.php");
     }
