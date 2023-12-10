@@ -1,5 +1,7 @@
 *.log
 *.cache
+cache/
+/vendor
 
 # Node
 node_modules/
